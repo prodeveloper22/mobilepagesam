@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Samsung Shop — Demo (falsk e-handel)</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23007ac1'/><text x='50' y='57' font-size='48' text-anchor='middle' fill='white' font-family='Arial'>S</text></svg>">
+<style>
+  :root{
+    --brand:#14284a;
+    --accent:#0ea5a4;
+    --muted:#6b7280;
+    --card:#ffffff;
+    --bg:#f6f8fb;
+    --danger:#ef4444;
+    --success:#10b981;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#111;background:var(--bg);-webkit-font-smoothing:antialiased}
+  header{background:linear-gradient(90deg,var(--brand),#075985);color:white;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  header h1{margin:0;font-size:18px;letter-spacing:0.3px}
+  .header-actions{display:flex;gap:12px;align-items:center}
+  .btn{background:white;color:var(--brand);border-radius:8px;padding:8px 12px;font-weight:600;border:none;cursor:pointer}
+  .btn.ghost{background:transparent;color:white;border:1px solid rgba(255,255,255,0.2)}
+  .container{max-width:1200px;margin:26px auto;padding:0 18px}
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:20px}
+  .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+  .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);display:flex;flex-direction:column}
+  .prod-img{height:150px;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#f3f8ff,#eef6ff);display:flex;align-items:center;justify-content:center}
+  .prod-name{font-weight:700;margin-top:10px}
+  .prod-sub{color:var(--muted);font-size:13px;margin-top:6px}
+  .price-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .price{font-weight:800;font-size:18px}
+  .old-price{color:var(--muted);text-decoration:line-through;font-size:13px}
+  .prod-actions{margin-top:auto;display:flex;gap:8px}
+  .badge{background:#ffefcc;padding:6px 8px;border-radius:8px;color:#7a4b00;font-weight:700;font-size:12px}
+  .sidebar{position:sticky;top:20px}
+  .cart{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+  .cart h3{margin:0 0 10px 0}
+  .cart-item{display:flex;gap:10px;align-items:center;border-bottom:1px dashed #eee;padding:10px 0}
+  .cart-item:last-child{border-bottom:none}
+  .qty{display:flex;gap:6px;align-items:center}
+  .small{font-size:13px;color:var(--muted)}
+  footer{margin:40px 0 60px;color:var(--muted);text-align:center}
+  /* admin modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(8,10,12,0.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+  .modal{background:white;border-radius:12px;padding:18px;max-width:860px;width:100%;max-height:90vh;overflow:auto}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
+  input,textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
+  textarea{min-height:96px;resize:vertical}
+  .admin-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .product-row{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9}
+  .product-row:last-child{border-bottom:none}
+  .muted{color:var(--muted)}
+  .search-row{display:flex;gap:8px;margin-bottom:12px}
+  .pill{background:#eef2ff;color:#3730a3;padding:6px 8px;border-radius:999px;font-weight:700;font-size:12px}
+  .topbar{display:flex;gap:12px;align-items:center}
+  .receipt{font-family:monospace;background:#f9fafb;padding:12px;border-radius:8px}
+  @media(max-width:900px){
+    .grid{grid-template-columns:1fr;gap:14px}
+    .sidebar{position:static}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <svg width="38" height="38" viewBox="0 0 100 100" fill="none" aria-hidden>
+      <rect width="100" height="100" rx="16" fill="#0ea5a4"/>
+      <text x="50" y="58" font-size="46" text-anchor="middle" fill="white" font-family="Arial">S</text>
+    </svg>
+    <div>
+      <h1>Samsung Shop — demo (ingen riktig betalning)</h1>
+      <div style="font-size:13px;color:rgba(255,255,255,0.9)">Falsk e-handel: admin kan skapa produkter, rea & kvitto.</div>
+    </div>
+  </div>
+
+  <div class="header-actions">
+    <div class="topbar">
+      <div class="pill">Demo</div>
+      <div class="pill" style="background:rgba(255,255,255,0.12);color:white">Local-only</div>
+    </div>
+    <button id="btnAdmin" class="btn ghost">Admin</button>
+    <button id="btnCartToggle" class="btn">Varukorg (<span id="cart-count">0</span>)</button>
+  </div>
+</header>
+
+<main class="container">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="display:flex;gap:10px;align-items:center">
+      <input id="search" placeholder="Sök modell, specifikation..." style="padding:8px;border-radius:8px;border:1px solid #e6e9ef;width:360px" />
+      <select id="filter-category" style="padding:8px;border-radius:8px;border:1px solid #e6e9ef">
+        <option value="">Alla kategorier</option>
+        <option value="S">S‑serie</option>
+        <option value="A">A‑serie</option>
+        <option value="Z">Z Fold/Flip</option>
+        <option value="Note">Note/Ultra</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="small">Totalt produkter: <strong id="total-products">0</strong></div>
+      <button id="btnClearData" title="Rensa lokal data (återställer initialt produktutbud)" class="btn ghost">Återställ</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section>
+      <div class="products" id="product-list">
+        <!-- produkter renderas här -->
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="cart" id="cart-box">
+        <h3>Varukorg</h3>
+        <div id="cart-items"></div>
+        <div style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between"><div class="small">Delsumma</div><div id="cart-subtotal">0 kr</div></div>
+          <div style="display:flex;justify-content:space-between"><div class="small">Rabatter</div><div id="cart-discount">0 kr</div></div>
+          <div style="display:flex;justify-content:space-between"><div class="small">Moms (25%)</div><div id="cart-tax">0 kr</div></div>
+          <hr style="margin:10px 0;border:none;border-top:1px solid #f1f5f9" />
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>Totalt</strong><strong id="cart-total">0 kr</strong>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button id="btnCheckout" class="btn" style="flex:1">Checkout</button>
+          <button id="btnEmpty" class="btn ghost" style="flex:1">Töm</button>
+        </div>
+      </div>
+
+      <div style="height:18px"></div>
+
+      <div class="cart">
+        <h3>Snabbinformation</h3>
+        <div class="small">Admin login: klicka "Admin" → lösenord <strong>admin</strong>.</div>
+        <div style="height:10px"></div>
+        <div class="small">Produkter, rabatter och kvitton sparas lokalt i din webbläsare.</div>
+      </div>
+
+    </aside>
+  </div>
+</main>
+
+<footer>
+  Detta är en demonstrationssida — ingen riktig betalning eller order lagras på server.
+</footer>
+
+<!-- Admin modal -->
+<div class="modal-bg" id="modalAdmin">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>Adminpanel</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="btnCloseAdmin" class="btn ghost">Stäng</button>
+        <button id="btnLogout" class="btn" style="background:var(--danger);color:white">Logga ut</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+        <input id="admin-search" placeholder="Sök bland produkter ..." style="flex:1;padding:8px;border-radius:8px;border:1px solid #e6e9ef" />
+        <button id="btnNewProduct" class="btn">Ny produkt</button>
+      </div>
+
+      <div id="admin-list" style="max-height:380px;overflow:auto;padding-right:6px">
+        <!-- admin product rows -->
+      </div>
+
+      <hr style="margin:12px 0" />
+      <h3>Lägg till / Redigera produkt</h3>
+
+      <div style="margin-top:8px" id="product-form">
+        <div class="form-grid">
+          <div>
+            <label>Modellnamn</label>
+            <input id="p-name" placeholder="t.ex. Galaxy S24 Ultra" />
+          </div>
+          <div>
+            <label>Kategori</label>
+            <select id="p-category">
+              <option value="S">S</option>
+              <option value="A">A</option>
+              <option value="Z">Z</option>
+              <option value="Note">Note</option>
+              <option value="Other">Övrigt</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Pris (kr)</label>
+            <input id="p-price" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label>Rabatt (%)</label>
+            <input id="p-discount" type="number" min="0" max="100" step="1" value="0" />
+          </div>
+
+          <div style="grid-column:1/3">
+            <label>Specifikationer (fria textrader)</label>
+            <textarea id="p-specs" placeholder="- 8GB RAM\n- 256GB lagring\n- 5000 mAh..."></textarea>
+          </div>
+        </div>
+
+        <div class="admin-actions">
+          <button id="btnSaveProduct" class="btn">Spara produkt</button>
+          <button id="btnDelProduct" class="btn ghost" style="background:#fff3f3;color:var(--danger)">Ta bort</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Checkout / receipt modal -->
+<div class="modal-bg" id="modalCheckout">
+  <div class="modal" style="max-width:640px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>Checkout & kvitto</h2>
+      <button id="btnCloseCheckout" class="btn ghost">Stäng</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <div id="receipt-area" class="receipt">
+        <!-- kvitto skapas här -->
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="btnSaveReceipt" class="btn">Spara kvitto (copy)</button>
+        <button id="btnPrint" class="btn">Skriv ut</button>
+        <button id="btnConfirm" class="btn" style="background:var(--success);color:white">Bekräfta order</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/*
+  Samsung Shop - demo
+  - Data persistence via localStorage
+  - Admin login: password 'admin'
+*/
+
+// -- Helpers
+const $ = sel => document.querySelector(sel);
+const fmt = n => (Math.round(n) + ' kr');
+const currency = n => Math.round(n); // rounded whole kr
+
+// Local storage keys
+const KEY_PRODUCTS = 'samsung_shop_products_v1';
+const KEY_CART = 'samsung_shop_cart_v1';
+const KEY_ADMIN = 'samsung_shop_admin_v1';
+
+// Initial product dataset (22 modeller)
+const initialProducts = [
+  {id: idGen(), name:'Galaxy S25 Ultra', category:'S', price:14990, discount:0, specs:'200MP kamera\n12GB RAM\n512GB lagring\n5000 mAh'},
+  {id: idGen(), name:'Galaxy S25+', category:'S', price:11990, discount:0, specs:'50MP kamera\n12GB RAM\n256GB lagring\n4500 mAh'},
+  {id: idGen(), name:'Galaxy S25', category:'S', price:9490, discount:5, specs:'50MP kamera\n8GB RAM\n128GB lagring\n4300 mAh'},
+  {id: idGen(), name:'Galaxy Z Fold 6', category:'Z', price:22990, discount:0, specs:'Flexibelt skärm\n12GB RAM\n512GB lagring\n4400 mAh'},
+  {id: idGen(), name:'Galaxy Z Flip 6', category:'Z', price:14990, discount:10, specs:'Kompakt vikbar\n8GB RAM\n256GB lagring\n3700 mAh'},
+  {id: idGen(), name:'Galaxy A55', category:'A', price:3790, discount:15, specs:'50MP kamera\n8GB RAM\n256GB lagring\n5000 mAh'},
+  {id: idGen(), name:'Galaxy A35', category:'A', price:2990, discount:0, specs:'48MP kamera\n6GB RAM\n128GB lagring\n4500 mAh'},
+  {id: idGen(), name:'Galaxy A15', category:'A', price:1990, discount:5, specs:'50MP kamera\n4GB RAM\n64GB lagring\n5000 mAh'},
+  {id: idGen(), name:'Galaxy S24 FE', category:'S', price:6990, discount:20, specs:'Flagg-som variant\n8GB RAM\n256GB lagring\n4300 mAh'},
+  {id: idGen(), name:'Galaxy S24 Ultra Ceramic', category:'S', price:15990, discount:0, specs:'Keramisk bak\n12GB RAM\n1TB lagring\n5000 mAh'},
+  {id: idGen(), name:'Galaxy Z Fold FE', category:'Z', price:18990, discount:10, specs:'Folded value\n12GB RAM\n256GB lagring\n4200 mAh'},
+  {id: idGen(), name:'Galaxy Note Classic', category:'Note', price:10990, discount:0, specs:'S-Pen stöd\n12GB RAM\n256GB lagring\n4800 mAh'},
+  {id: idGen(), name:'Galaxy S23 FE', category:'S', price:5490, discount:25, specs:'Prisvärd flaggskepp\n8GB RAM\n128GB lagring\n4100 mAh'},
+  {id: idGen(), name:'Galaxy Z Flip Lite', category:'Z', price:9990, discount:5, specs:'Billigare flip\n8GB RAM\n128GB lagring\n3300 mAh'},
+  {id: idGen(), name:'Galaxy A05s', category:'A', price:1190, discount:0, specs:'Budget modell\n4GB RAM\n64GB lagring\n5000 mAh'},
+  {id: idGen(), name:'Galaxy S23+', category:'S', price:8990, discount:0, specs:'Kraftfull vardag\n8GB RAM\n256GB lagring\n4700 mAh'},
+  {id: idGen(), name:'Galaxy X Pro', category:'Other', price:12990, discount:12, specs:'Konceptmodell\n16GB RAM\n1TB lagring\n4800 mAh'},
+  {id: idGen(), name:'Galaxy S22 Ultra Reborn', category:'S', price:7990, discount:30, specs:'Rea‑special\n12GB RAM\n256GB lagring\n5000 mAh'},
+  {id: idGen(), name:'Galaxy A73', category:'A', price:4690, discount:10, specs:'Bra kamera\n8GB RAM\n256GB lagring\n5000 mAh'},
+  {id: idGen(), name:'Galaxy Z Fold 5 Classic', category:'Z', price:21990, discount:5, specs:'Föregående fold\n12GB RAM\n512GB lagring\n4400 mAh'},
+  {id: idGen(), name:'Galaxy Flip Collector', category:'Z', price:17990, discount:0, specs:'Speciell finish\n8GB RAM\n256GB lagring\n3600 mAh'},
+  {id: idGen(), name:'Galaxy A53 5G', category:'A', price:3490, discount:0, specs:'Populär mellanklass\n6GB RAM\n128GB lagring\n5000 mAh'}
+];
+
+// -- State
+let products = [];
+let cart = []; // items: {id, qty}
+let adminLogged = false;
+let editingId = null;
+
+// -- Init
+function init(){
+  // load products
+  const raw = localStorage.getItem(KEY_PRODUCTS);
+  if(!raw){
+    products = initialProducts.slice();
+    saveProducts();
+  } else {
+    try { products = JSON.parse(raw) } catch(e){ products = initialProducts.slice(); saveProducts(); }
+  }
+
+  const rawCart = localStorage.getItem(KEY_CART);
+  cart = rawCart ? JSON.parse(rawCart) : [];
+
+  const admin = sessionStorage.getItem(KEY_ADMIN);
+  adminLogged = !!admin;
+
+  renderAll();
+}
+
+function saveProducts(){
+  localStorage.setItem(KEY_PRODUCTS, JSON.stringify(products));
+}
+
+function saveCart(){
+  localStorage.setItem(KEY_CART, JSON.stringify(cart));
+}
+
+// -- ID generator
+function idGen(){ return 'p_' + Math.random().toString(36).slice(2,9); }
+
+// -- Rendering
+function renderAll(){
+  renderProducts();
+  renderCart();
+  renderAdminList();
+  $('#total-products').textContent = products.length;
+  $('#cart-count').textContent = cart.reduce((s,i)=>s+i.qty,0);
+}
+
+function productImageDataUrl(name, color){
+  // Generate a simple SVG data URL with modelname
+  const bg = color || '#f3f8ff';
+  const text = encodeURIComponent(name);
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='100%' height='100%' fill='${bg}'/><text x='50%' y='50%' font-size='36' font-family='Arial' fill='#0f172a' text-anchor='middle' dominant-baseline='middle'>${text}</text></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+function renderProducts(){
+  const list = $('#product-list');
+  list.innerHTML = '';
+  const q = $('#search').value.trim().toLowerCase();
+  const cat = $('#filter-category').value;
+  const filtered = products.filter(p=>{
+    const inSearch = !q || (p.name.toLowerCase().includes(q) || (p.specs||'').toLowerCase().includes(q));
+    const inCat = !cat || p.category === cat;
+    return inSearch && inCat;
+  });
+
+  filtered.forEach(p=>{
+    const el = document.createElement('div');
+    el.className = 'card';
+    const img = productImageDataUrl(p.name);
+    el.innerHTML = `
+      <div class="prod-img"><img src="${img}" alt="${escapeHtml(p.name)}" style="max-width:100%;max-height:100%"></div>
+      <div class="prod-name">${escapeHtml(p.name)}</div>
+      <div class="prod-sub">${escapeHtml(p.category)} · ${escapeHtml((p.specs||'').split('\\n')[0] || '')}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center" class="price-row">
+        <div>
+          ${p.discount ? `<div class="old-price">${fmt(p.price)}</div>` : ''}
+          <div class="price">${fmt(finalPrice(p))} ${p.discount ? `<span style="font-size:12px;color:var(--muted);font-weight:600">(${p.discount}% off)</span>` : ''}</div>
+        </div>
+        ${p.discount ? `<div class="badge">REA</div>` : ''}
+      </div>
+      <div class="prod-actions">
+        <button class="btn btn-add" data-id="${p.id}">Lägg i varukorg</button>
+        <button class="btn ghost btn-view" data-id="${p.id}">Visa</button>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+
+  $('#total-products').textContent = filtered.length;
+  // attach events
+  document.querySelectorAll('.btn-add').forEach(b=>b.addEventListener('click',e=>{
+    const id = e.currentTarget.dataset.id;
+    addToCart(id,1);
+  }));
+  document.querySelectorAll('.btn-view').forEach(b=>b.addEventListener('click',e=>{
+    const id = e.currentTarget.dataset.id;
+    showProductDetail(id);
+  }));
+}
+
+function showProductDetail(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  // reuse checkout modal area to show product detail
+  const modal = $('#modalCheckout');
+  const receipt = $('#receipt-area');
+  const img = productImageDataUrl(p.name, '#eef7ff');
+  receipt.innerHTML = `
+    <div style="display:flex;gap:12px">
+      <img src="${img}" alt="${escapeHtml(p.name)}" style="width:160px;border-radius:8px"/>
+      <div style="flex:1">
+        <h3 style="margin:0">${escapeHtml(p.name)}</h3>
+        <div class="small" style="margin-top:6px">${escapeHtml(p.category)} · ${escapeHtml((p.specs||'').split('\\n')[0]||'')}</div>
+        <div style="margin-top:10px">${(p.specs||'').split('\\n').map(s=>`<div class="small">• ${escapeHtml(s)}</div>`).join('')}</div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <div class="price">${fmt(finalPrice(p))}</div>
+          ${p.discount ? `<div class="old-price">${fmt(p.price)}</div>` : ''}
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="pd-add" class="btn">Lägg i varukorg</button>
+          <button class="btn ghost" id="pd-close">Stäng</button>
+        </div>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+  $('#btnCloseCheckout').style.display='none';
+  $('#btnConfirm').style.display='none';
+  $('#btnPrint').style.display='none';
+  $('#btnSaveReceipt').style.display='none';
+  document.getElementById('pd-add').addEventListener('click',()=>{ addToCart(p.id,1); modal.style.display='none' });
+  document.getElementById('pd-close').addEventListener('click',()=>{ modal.style.display='none' });
+}
+
+function renderCart(){
+  const wrap = $('#cart-items');
+  wrap.innerHTML = '';
+  if(cart.length===0){ wrap.innerHTML = '<div class="small">Din varukorg är tom.</div>'; updateCartSummary(); return; }
+  cart.forEach(item=>{
+    const p = products.find(x=>x.id===item.id);
+    if(!p) return;
+    const row = document.createElement('div');
+    row.className = 'cart-item';
+    row.innerHTML = `
+      <div style="width:58px;height:58px;border-radius:8px;overflow:hidden;background:#f8fafc"><img src="${productImageDataUrl(p.name)}" style="width:100%;height:100%;object-fit:cover"></div>
+      <div style="flex:1">
+        <div style="font-weight:700">${escapeHtml(p.name)}</div>
+        <div class="small">${fmt(finalPrice(p))} &middot; ${escapeHtml(p.category)}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="qty">
+          <button class="btn ghost small dec" data-id="${p.id}">-</button>
+          <div style="padding:6px 8px;border-radius:8px;border:1px solid #eee">${item.qty}</div>
+          <button class="btn ghost small inc" data-id="${p.id}">+</button>
+        </div>
+        <div style="margin-top:6px"><button class="btn ghost small rem" data-id="${p.id}">Ta bort</button></div>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+  // events
+  wrap.querySelectorAll('.inc').forEach(b=>b.addEventListener('click',e=>{
+    const id = e.currentTarget.dataset.id; changeQty(id,1);
+  }));
+  wrap.querySelectorAll('.dec').forEach(b=>b.addEventListener('click',e=>{
+    const id = e.currentTarget.dataset.id; changeQty(id,-1);
+  }));
+  wrap.querySelectorAll('.rem').forEach(b=>b.addEventListener('click',e=>{
+    const id = e.currentTarget.dataset.id; removeFromCart(id);
+  }));
+  updateCartSummary();
+}
+
+function updateCartSummary(){
+  const subtotal = cart.reduce((s,it)=>{
+    const p = products.find(x=>x.id===it.id);
+    if(!p) return s;
+    return s + finalPrice(p) * it.qty;
+  },0);
+  const orig = cart.reduce((s,it)=>{
+    const p = products.find(x=>x.id===it.id);
+    if(!p) return s;
+    return s + p.price * it.qty;
+  },0);
+  const discountAmount = Math.max(0, orig - subtotal);
+  const tax = Math.round(subtotal * 0.25);
+  const total = Math.round(subtotal + tax);
+
+  $('#cart-subtotal').textContent = fmt(subtotal);
+  $('#cart-discount').textContent = fmt(discountAmount);
+  $('#cart-tax').textContent = fmt(tax);
+  $('#cart-total').textContent = fmt(total);
+  $('#cart-count').textContent = cart.reduce((s,i)=>s+i.qty,0);
+}
+
+function finalPrice(p){
+  if(!p || !p.price) return 0;
+  const disc = Number(p.discount)||0;
+  return Math.round(p.price * (1 - disc/100));
+}
+
+// -- Cart actions
+function addToCart(id, qty){
+  const existing = cart.find(c=>c.id===id);
+  if(existing) existing.qty += qty;
+  else cart.push({id, qty});
+  cart = cart.filter(c=>c.qty>0);
+  saveCart();
+  renderCart();
+  renderAll();
+}
+
+function changeQty(id, delta){
+  const it = cart.find(c=>c.id===id);
+  if(!it) return;
+  it.qty += delta;
+  if(it.qty <= 0) cart = cart.filter(c=>c.id!==id);
+  saveCart();
+  renderCart();
+  renderAll();
+}
+
+function removeFromCart(id){
+  cart = cart.filter(c=>c.id!==id);
+  saveCart();
+  renderCart();
+  renderAll();
+}
+
+function emptyCart(){
+  cart = [];
+  saveCart();
+  renderCart();
+  renderAll();
+}
+
+// -- Admin
+function openAdmin(){
+  const pw = prompt('Admin lösenord:');
+  if(pw !== 'admin'){ alert('Fel lösenord'); return; }
+  sessionStorage.setItem(KEY_ADMIN, '1');
+  adminLogged = true;
+  $('#modalAdmin').style.display = 'flex';
+  $('#btnCloseAdmin').style.display='inline-block';
+  renderAdminList();
+}
+
+function closeAdmin(){
+  $('#modalAdmin').style.display = 'none';
+}
+
+function logoutAdmin(){
+  sessionStorage.removeItem(KEY_ADMIN);
+  adminLogged = false;
+  closeAdmin();
+}
+
+function renderAdminList(){
+  const wrap = $('#admin-list');
+  wrap.innerHTML = '';
+  products.forEach(p=>{
+    const row = document.createElement('div');
+    row.className = 'product-row';
+    row.innerHTML = `
+      <div style="width:48px;height:48px;border-radius:8px;overflow:hidden;background:#f8fafc"><img src="${productImageDataUrl(p.name)}" style="width:100%;height:100%;object-fit:cover"></div>
+      <div style="flex:1">
+        <div style="font-weight:700">${escapeHtml(p.name)}</div>
+        <div class="small">${escapeHtml(p.category)} · ${escapeHtml((p.specs||'').split('\\n')[0]||'')}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700">${fmt(finalPrice(p))}</div>
+        <div class="small">${p.discount ? p.discount+'% rea' : ''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn admin-edit" data-id="${p.id}">Redigera</button>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+  // attach edit
+  wrap.querySelectorAll('.admin-edit').forEach(b=>b.addEventListener('click',e=>{
+    const id = e.currentTarget.dataset.id;
+    startEditProduct(id);
+  }));
+}
+
+function startEditProduct(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  editingId = id;
+  $('#p-name').value = p.name;
+  $('#p-category').value = p.category;
+  $('#p-price').value = p.price;
+  $('#p-discount').value = p.discount || 0;
+  $('#p-specs').value = p.specs || '';
+  $('#btnDelProduct').style.display = 'inline-block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearProductForm(){
+  editingId = null;
+  $('#p-name').value = '';
+  $('#p-price').value = '';
+  $('#p-specs').value = '';
+  $('#p-discount').value = 0;
+  $('#btnDelProduct').style.display = 'none';
+}
+
+function saveProductFromForm(){
+  const name = $('#p-name').value.trim();
+  const price = parseInt($('#p-price').value,10) || 0;
+  const specs = $('#p-specs').value.trim();
+  const discount = Math.min(100, Math.max(0, parseInt($('#p-discount').value,10)||0));
+  const category = $('#p-category').value || 'Other';
+  if(!name || price <= 0){ alert('Produkt måste ha ett namn och pris > 0'); return; }
+  if(editingId){
+    const p = products.find(x=>x.id===editingId);
+    if(!p) return;
+    p.name = name; p.price = price; p.specs = specs; p.discount = discount; p.category = category;
+  } else {
+    products.unshift({id:idGen(), name, price, specs, discount, category});
+  }
+  saveProducts(); renderAll(); renderAdminList(); clearProductForm();
+  alert('Produkten sparad');
+}
+
+function deleteProduct(){
+  if(!editingId) return;
+  if(!confirm('Ta bort produkten permanent?')) return;
+  products = products.filter(p=>p.id !== editingId);
+  saveProducts();
+  editingId = null;
+  clearProductForm();
+  renderAll();
+}
+
+// -- Checkout & receipt
+function openCheckout(){
+  if(cart.length===0){ alert('Varukorgen är tom'); return; }
+  const modal = $('#modalCheckout');
+  $('#btnCloseCheckout').style.display='inline-block';
+  $('#btnConfirm').style.display='inline-block';
+  $('#btnPrint').style.display='inline-block';
+  $('#btnSaveReceipt').style.display='inline-block';
+  modal.style.display = 'flex';
+  renderReceipt();
+}
+
+function renderReceipt(){
+  const area = $('#receipt-area');
+  const orderId = 'ORD' + Math.floor(Math.random()*900000 + 100000);
+  const date = new Date().toLocaleString();
+  let lines = '';
+  let subtotal = 0; let orig = 0;
+  cart.forEach(it=>{
+    const p = products.find(x=>x.id===it.id);
+    if(!p) return;
+    const unit = finalPrice(p);
+    const line_total = unit * it.qty;
+    subtotal += line_total;
+    orig += p.price * it.qty;
+    lines += `${p.name} × ${it.qty}  — ${fmt(line_total)}\n`;
+  });
+  const discountAmount = Math.max(0, orig - subtotal);
+  const tax = Math.round(subtotal * 0.25);
+  const total = subtotal + tax;
+
+  area.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:800">Samsung Shop — Demo</div>
+        <div class="small">Org.nr: 012345-6789</div>
+      </div>
+      <div style="text-align:right">
+        <div class="small">Order</div>
+        <div style="font-weight:700">${orderId}</div>
+        <div class="small">${date}</div>
+      </div>
+    </div>
+    <hr style="margin:10px 0;border:none;border-top:1px solid #eee" />
+    <pre style="margin:0;font-family:monospace;font-size:13px">${escapeHtml(lines)}</pre>
+    <hr style="margin:10px 0;border:none;border-top:1px solid #eee" />
+    <div style="display:flex;justify-content:space-between"><div class="small">Delsumma</div><div>${fmt(subtotal)}</div></div>
+    <div style="display:flex;justify-content:space-between"><div class="small">Rabatter</div><div>${fmt(discountAmount)}</div></div>
+    <div style="display:flex;justify-content:space-between"><div class="small">Moms (25%)</div><div>${fmt(tax)}</div></div>
+    <div style="display:flex;justify-content:space-between;font-weight:800;margin-top:6px"><div>Att betala</div><div>${fmt(total)}</div></div>
+    <div style="margin-top:8px" class="small">Detta är ett demo‑kvitto. Ingen riktig betalning genomförs.</div>
+  `;
+  // save last receipt to session for "save copy"
+  sessionStorage.setItem('last_receipt', area.innerText);
+}
+
+function confirmOrder(){
+  // "place order" — fake
+  const confirmMsg = `Order bekräftad! (Demo)\nDin order sparas lokalt endast som kvitto.`;
+  alert(confirmMsg);
+  // clear cart
+  emptyCart();
+  $('#modalCheckout').style.display = 'none';
+}
+
+// -- Utilities
+function escapeHtml(s){
+  if(!s) return '';
+  return String(s).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]) });
+}
+
+// Events binding
+document.getElementById('btnAdmin').addEventListener('click', ()=>{
+  if(sessionStorage.getItem(KEY_ADMIN)) { $('#modalAdmin').style.display='flex'; } else openAdmin();
+});
+$('#btnCloseAdmin').addEventListener('click', ()=>{ closeAdmin(); });
+$('#btnLogout').addEventListener('click', ()=>{ logoutAdmin(); });
+
+$('#btnNewProduct').addEventListener('click', ()=>{ clearProductForm(); $('#p-name').focus(); });
+$('#btnSaveProduct').addEventListener('click', saveProductFromForm);
+$('#btnDelProduct').addEventListener('click', deleteProduct);
+
+$('#search').addEventListener('input', ()=>renderProducts());
+$('#filter-category').addEventListener('change', ()=>renderProducts());
+$('#admin-search').addEventListener('input', ()=>{ const q = $('#admin-search').value.toLowerCase(); document.querySelectorAll('#admin-list .product-row').forEach(r=>{ const txt = r.innerText.toLowerCase(); r.style.display = txt.includes(q) ? '' : 'none' }) });
+
+$('#btnCartToggle').addEventListener('click', ()=>{ window.scrollTo({top:0,behavior:'smooth'}); document.getElementById('cart-box').style.boxShadow='0 10px 30px rgba(2,6,23,0.08)'; setTimeout(()=>document.getElementById('cart-box').style.boxShadow='0 6px 18px rgba(15,23,42,0.06)',700); });
+$('#btnEmpty').addEventListener('click', ()=>{ if(confirm('Töm varukorgen?')) emptyCart(); });
+$('#btnCheckout').addEventListener('click', openCheckout);
+$('#btnCloseCheckout').addEventListener('click', ()=>{ $('#modalCheckout').style.display = 'none'; });
+$('#btnConfirm').addEventListener('click', ()=>{ confirmOrder(); });
+$('#btnPrint').addEventListener('click', ()=>{ window.print(); });
+$('#btnSaveReceipt').addEventListener('click', ()=>{
+  const text = sessionStorage.getItem('last_receipt') || '';
+  if(!text){ alert('Inget kvitto att spara'); return; }
+  copyToClipboard(text);
+  alert('Kvitto kopierat till urklipp (text).');
+});
+
+$('#btnClearData').addEventListener('click', ()=>{
+  if(!confirm('Återställ lokal data? Detta tar bort dina ändringar och återställer initiala produkter.')) return;
+  localStorage.removeItem(KEY_PRODUCTS);
+  localStorage.removeItem(KEY_CART);
+  sessionStorage.removeItem('last_receipt');
+  init();
+});
+
+function copyToClipboard(text){
+  navigator.clipboard?.writeText(text).catch(()=>{ const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); });
+}
+
+// small utility to escape potential HTML
+// init display state for admin buttons
+$('#btnDelProduct').style.display='none';
+
+// seed functions must be defined before initialProducts used
+function initAfterLoad(){ init(); renderAll(); }
+
+// start
+initAfterLoad();
+
+// small utility: on page load if admin saved in session, open admin hidden? keep closed.
+document.addEventListener('keydown', e=>{
+  if(e.key==='/' && !e.metaKey && !e.ctrlKey){ e.preventDefault(); $('#search').focus(); }
+});
+</script>
+
+</body>
+</html>
